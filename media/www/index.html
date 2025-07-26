@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Shaka Player Demo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.6/shaka-player.compiled.js"></script>
+  </head>
+  <body>
+    <h1>Shaka Player Demo</h1>
+    <video id="video" width="640" controls autoplay></video>
+    <script>
+      var manifestUri = 'manifest.mpd';
+      var video = document.getElementById('video');
+      var player = new shaka.Player(video);
+      player.load(manifestUri).catch(console.error);
+    </script>
+  </body>
+</html> 
