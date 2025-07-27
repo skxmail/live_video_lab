@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Shaka Player Quality Monitor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.6/shaka-player.compiled.js"></script>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 20px; }
+      .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+      .metric-card { border: 1px solid #ddd; padding: 15px; border-radius: 5px; background: #f9f9f9; }
+      .metric-value { font-size: 24px; font-weight: bold; color: #333; }
+      .metric-label { color: #666; margin-bottom: 5px; }
+      .log-container { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #f5f5f5; font-family: monospace; }
+      .error { color: red; }
+      .warning { color: orange; }
+      .info { color: blue; }
+    </style>
+  </head>
+  <body>
+    <h1>Shaka Player Quality Monitor</h1>
+    
+    <video id="video" width="640" controls autoplay></video>
+    
+    <div class="metrics">
+      <div class="metric-card">
+        <div class="metric-label">Bitrate Actual</div>
+        <div class="metric-value" id="current-bitrate">-</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Resolución</div>
+        <div class="metric-value" id="resolution">-</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">FPS</div>
+        <div class="metric-value" id="fps">-</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Buffer Health</div>
+        <div class="metric-value" id="buffer-health">-</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Dropped Frames</div>
+        <div class="metric-value" id="dropped-frames">-</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Audio Level</div>
+        <div class="metric-value" id="audio-level">-</div>
+      </div>
+    </div>
+    
+    <h3>Event Log</h3>
+    <div class="log-container" id="log"></div>
+
+    <script>
+      var manifestUri = 'manifest.mpd';
+      var video = document.getElementById('video');
+      var player = new shaka.Player(video);
+      var logElement = document.getElementById('log');
+      
+      // Función para agregar logs
+      function addLog(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = document.createElement('div');
+        logEntry.className = type;
+        logEntry.textContent = `[${timestamp}] ${message}`;
+        logElement.appendChild(logEntry);
+        logElement.scrollTop = logElement.scrollHeight;
+      }
+      
+      // Configurar eventos de calidad
+      player.addEventListener('adaptation', function(event) {
+        addLog(`Adaptation: ${event.detail.oldAdaptationSet} -> ${event.detail.newAdaptationSet}`, 'info');
+        updateMetrics();
+      });
+      
+      player.addEventListener('buffering', function(event) {
+        addLog(`Buffering: ${event.buffering ? 'started' : 'ended'}`, 'warning');
+      });
+      
+      player.addEventListener('error', function(event) {
+        addLog(`Error: ${event.detail.code} - ${event.detail.message}`, 'error');
+      });
+      
+      // Monitoreo de métricas en tiempo real
+      function updateMetrics() {
+        const stats = player.getStats();
+        const videoElement = video;
+        
+        // Bitrate actual
+        if (stats.estimatedBandwidth) {
+          document.getElementById('current-bitrate').textContent = 
+            Math.round(stats.estimatedBandwidth / 1000) + ' kbps';
+        }
+        
+        // Resolución
+        if (videoElement.videoWidth && videoElement.videoHeight) {
+          document.getElementById('resolution').textContent = 
+            `${videoElement.videoWidth}x${videoElement.videoHeight}`;
+        }
+        
+        // FPS (aproximado)
+        if (stats.decodingTime) {
+          const fps = Math.round(1000 / stats.decodingTime);
+          document.getElementById('fps').textContent = fps + ' fps';
+        }
+        
+        // Buffer health
+        if (videoElement.buffered.length > 0) {
+          const bufferedEnd = videoElement.buffered.end(videoElement.buffered.length - 1);
+          const currentTime = videoElement.currentTime;
+          const bufferHealth = Math.round((bufferedEnd - currentTime) * 1000);
+          document.getElementById('buffer-health').textContent = bufferHealth + 'ms';
+        }
+        
+        // Dropped frames
+        if (stats.droppedFrames !== undefined) {
+          document.getElementById('dropped-frames').textContent = stats.droppedFrames;
+        }
+        
+        // Audio level (si está disponible)
+        if (videoElement.audioTracks && videoElement.audioTracks.length > 0) {
+          document.getElementById('audio-level').textContent = 'Active';
+        }
+      }
+      
+      // Actualizar métricas cada segundo
+      setInterval(updateMetrics, 1000);
+      
+      // Cargar el manifest
+      player.load(manifestUri).then(function() {
+        addLog('Manifest loaded successfully', 'info');
+        updateMetrics();
+      }).catch(function(error) {
+        addLog(`Failed to load manifest: ${error.message}`, 'error');
+      });
+      
+      // Eventos adicionales del video
+      video.addEventListener('loadstart', () => addLog('Video loading started', 'info'));
+      video.addEventListener('canplay', () => addLog('Video can start playing', 'info'));
+      video.addEventListener('playing', () => addLog('Video is playing', 'info'));
+      video.addEventListener('pause', () => addLog('Video paused', 'info'));
+      video.addEventListener('ended', () => addLog('Video ended', 'info'));
+      video.addEventListener('error', (e) => addLog(`Video error: ${e.message}`, 'error'));
+    </script>
+  </body>
+</html> 

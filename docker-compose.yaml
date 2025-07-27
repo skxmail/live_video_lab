@@ -32,23 +32,45 @@ services:
 #      - "input=udp://0.0.0.0:40000,stream=audio,init_segment=audio_init.mp4,segment_template=audio_$$Number$$.m4s"
       # - "input=udp://0.0.0.0:40000,stream=video,init_segment=h264_360p_init.mp4,segment_template=h264_360p_$$Number$$.m4s"
 
-      - "input=udp://0.0.0.0:40000,stream=audio,init_segment=/media/www/audio_init.mp4,segment_template=/media/www/audio_$$Number$$.m4s"
-      - "input=udp://0.0.0.0:40000,stream=video,init_segment=/media/www/h264_360p_init.mp4,segment_template=/media/www/h264_360p_$$Number$$.m4s"
+      - "input=udp://0.0.0.0:40000,stream=audio,init_segment=/media/www/output/audio/audio_init.mp4,segment_template=/media/www/output/audio/audio_$$Number$$.m4s"
+      - "input=udp://0.0.0.0:40000,stream=video,init_segment=/media/www/output/video/h264_360p_init.mp4,segment_template=/media/www/output/video/h264_360p_$$Number$$.m4s"
   
       # - --segment_duration
       # - "5"
       - --mpd_output
-      - /media/www/manifest.mpd
+      - /media/www/output/manifest.mpd
 
   player:
     image: nginx:alpine
     container_name: player
     volumes:
-      - ./media/www:/usr/share/nginx/html:ro
+      - ./media/www:/usr/share/nginx/html:rw
     ports:
-      - "8080:80"
+      - "38880:80"
     networks:
       - streaming
+
+  monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.monitor
+    container_name: monitor
+    volumes:
+      - ./media:/media
+      - ./logs:/app/logs
+      - ./quality_analyzer.sh:/app/quality_analyzer.sh:ro
+      - ./stream_monitor.py:/app/stream_monitor.py:ro
+    ports:
+      - "38881:8081"
+    environment:
+      - MANIFEST_URL=http://packager:8080/manifest.mpd
+      - MONITOR_INTERVAL=30
+      - LOG_LEVEL=INFO
+    networks:
+      - streaming
+    depends_on:
+      - packager
+    command: ["python3", "/app/stream_monitor.py", "http://packager:8080/manifest.mpd", "-i", "30", "-o", "/app/logs/stream_quality.json"]
 
 networks:
   streaming:
