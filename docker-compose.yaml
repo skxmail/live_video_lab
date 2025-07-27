@@ -63,14 +63,14 @@ services:
     ports:
       - "38881:8081"
     environment:
-      - MANIFEST_URL=http://packager:8080/manifest.mpd
+      - MANIFEST_URL=http://player:80/output/manifest.mpd
       - MONITOR_INTERVAL=30
       - LOG_LEVEL=INFO
     networks:
       - streaming
     depends_on:
       - packager
-    command: ["python3", "/app/stream_monitor.py", "http://packager:8080/manifest.mpd", "-i", "30", "-o", "/app/logs/stream_quality.json"]
+    command: ["python3", "/app/stream_monitor.py", "http://player:80/output/manifest.mpd", "-i", "30", "-o", "/app/logs/stream_quality.json"]
 
 networks:
   streaming:

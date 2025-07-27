@@ -14,7 +14,7 @@ USER root
 # RUN apk add --no-cache yt-dlp
 RUN apk add --no-cache python3 yt-dlp
 
-COPY start_encoder.sh /start_encoder.sh
+COPY encoder/start_encoder.sh /start_encoder.sh
 RUN chmod +x /start_encoder.sh
 
 ENTRYPOINT ["/start_encoder.sh"] 

@@ -9,7 +9,7 @@
     <h1>Shaka Player Demo</h1>
     <video id="video" width="640" controls autoplay></video>
     <script>
-      var manifestUri = 'manifest.mpd';
+      var manifestUri = './output/manifest.mpd';
       var video = document.getElementById('video');
       var player = new shaka.Player(video);
       player.load(manifestUri).catch(console.error);

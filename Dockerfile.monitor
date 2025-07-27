@@ -64,124 +64,12 @@ RUN mkdir -p /app/logs
 # VMAF requiere Python 3.10+ y puede instalarse con: pip install vmaf
 # Bento4 se puede compilar desde source si es necesario
 
-# Crear script de inicio
-RUN echo '#!/bin/bash\n\
-echo "=== Herramientas de Monitoreo de Calidad de Streaming ==="\n\
-echo "FFmpeg: $(ffmpeg -version | head -1)"\n\
-echo "Python: $(python3 --version)"\n\
-echo "VMAF: $(vmaf --version 2>/dev/null || echo "No instalado - requiere Python 3.10+")"\n\
-echo "MP4Box: $(mp4box -version 2>/dev/null || echo "No instalado - requiere GPAC")"\n\
-echo "Bento4: $(mp4dash --help 2>/dev/null | head -1 || echo "No instalado - se puede compilar manualmente")"\n\
-echo ""\n\
-echo "Scripts disponibles:"\n\
-echo "- /app/quality_analyzer.sh: Análisis de calidad de video"\n\
-echo "- /app/stream_monitor.py: Monitor de streams DASH/HLS"\n\
-echo ""\n\
-echo "Ejemplos de uso:"\n\
-echo "  ./quality_analyzer.sh input.mp4 output_dir"\n\
-echo "  python3 stream_monitor.py http://localhost:8080/manifest.mpd -i 30"\n\
-echo "  ffmpeg -i input.mp4 -vf ssim=stats_file=ssim.log -f null -"\n\
-echo "  vmaf -r reference.mp4 -d input.mp4 -o vmaf_output.xml"\n\
-echo ""\n\
-exec "$@"' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+# Copiar script de inicio
+COPY monitor/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
-# Crear aplicación web para visualización
-RUN echo 'from flask import Flask, render_template, jsonify\n\
-import os\n\
-import json\n\
-from datetime import datetime\n\
-\n\
-app = Flask(__name__)\n\
-\n\
-@app.route("/")\n\
-def dashboard():\n\
-    return """\n\
-<!DOCTYPE html>\n\
-<html>\n\
-<head>\n\
-    <title>Streaming Quality Monitor Dashboard</title>\n\
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>\n\
-    <style>\n\
-        body { font-family: Arial, sans-serif; margin: 20px; }\n\
-        .container { max-width: 1200px; margin: 0 auto; }\n\
-        .metric-card { border: 1px solid #ddd; padding: 15px; margin: 10px; border-radius: 5px; }\n\
-        .status-ok { background-color: #d4edda; border-color: #c3e6cb; }\n\
-        .status-error { background-color: #f8d7da; border-color: #f5c6cb; }\n\
-        .status-warning { background-color: #fff3cd; border-color: #ffeaa7; }\n\
-    </style>\n\
-</head>\n\
-<body>\n\
-    <div class="container">\n\
-        <h1>Streaming Quality Monitor Dashboard</h1>\n\
-        <div id="metrics"></div>\n\
-        <div id="charts"></div>\n\
-    </div>\n\
-    <script>\n\
-        function updateMetrics() {\n\
-            fetch("/api/metrics")\n\
-                .then(response => response.json())\n\
-                .then(data => {\n\
-                    document.getElementById("metrics").innerHTML = data.html;\n\
-                });\n\
-        }\n\
-        \n\
-        setInterval(updateMetrics, 5000);\n\
-        updateMetrics();\n\
-    </script>\n\
-</body>\n\
-</html>\n\
-"""\n\
-\n\
-@app.route("/api/metrics")\n\
-def get_metrics():\n\
-    try:\n\
-        with open("/app/logs/stream_quality.json", "r") as f:\n\
-            data = json.load(f)\n\
-        \n\
-        if not data:\n\
-            return jsonify({"html": "<p>No hay datos disponibles</p>"})\n\
-        \n\
-        latest = data[-1]\n\
-        \n\
-        html = f"""\n\
-        <div class="metric-card status-ok">\n\
-            <h3>Estado del Stream</h3>\n\
-            <p><strong>Última verificación:</strong> {latest.get("timestamp", "N/A")}</p>\n\
-            <p><strong>Estado de red:</strong> {latest.get("network_info", {}).get("status", "N/A")}</p>\n\
-            <p><strong>Tiempo de respuesta:</strong> {latest.get("network_info", {}).get("response_time", "N/A")}s</p>\n\
-        </div>\n\
-        """\n\
-        \n\
-        if "manifest_info" in latest:\n\
-            manifest = latest["manifest_info"]\n\
-            html += f"""\n\
-            <div class="metric-card status-ok">\n\
-                <h3>Información del Manifest</h3>\n\
-                <p><strong>Tipo:</strong> {manifest.get("type", "N/A")}</p>\n\
-                <p><strong>Streams de video:</strong> {manifest.get("video_streams", "N/A")}</p>\n\
-                <p><strong>Streams de audio:</strong> {manifest.get("audio_streams", "N/A")}</p>\n\
-            </div>\n\
-            """\n\
-        \n\
-        if "bitrate_stats" in latest:\n\
-            stats = latest["bitrate_stats"]\n\
-            html += f"""\n\
-            <div class="metric-card status-ok">\n\
-                <h3>Estadísticas de Bitrate</h3>\n\
-                <p><strong>Mínimo:</strong> {stats.get("min", "N/A")} bps</p>\n\
-                <p><strong>Máximo:</strong> {stats.get("max", "N/A")} bps</p>\n\
-                <p><strong>Promedio:</strong> {stats.get("avg", "N/A"):.0f} bps</p>\n\
-            </div>\n\
-            """\n\
-        \n\
-        return jsonify({"html": html})\n\
-        \n\
-    except Exception as e:\n\
-        return jsonify({"html": f"<p>Error: {str(e)}</p>"})\n\
-\n\
-if __name__ == "__main__":\n\
-    app.run(host="0.0.0.0", port=8081, debug=True)\n\
-' > /app/dashboard.py
+# Copiar aplicación web para visualización
+COPY monitor/dashboard.py /app/dashboard.py
 
 # Exponer puerto para el dashboard
 EXPOSE 8081

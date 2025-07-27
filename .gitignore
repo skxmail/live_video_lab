@@ -1,0 +1,141 @@
+# Logs
+logs/
+*.log
+*.log.*
+stream_quality.json
+quality_analysis.log
+monitoring.log
+
+# Media files
+media/output/
+media/www/output/audio/*
+media/www/output/*
+
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.m4v
+*.3gp
+*.ts
+*.m3u8
+*.mpd
+*.mp3
+*.wav
+*.aac
+*.flac
+*.ogg
+*.mds
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker
+.dockerignore
+
+# Configuration files with sensitive data
+.env
+.env.local
+.env.production
+config.local.yaml
+secrets.yaml
+
+# Analysis outputs
+analysis_results/
+quality_reports/
+vmaf_output/
+ssim_results/
+psnr_results/
+bitrate_analysis/
+
+# Monitoring data
+monitoring_data/
+stream_stats/
+performance_metrics/
+
+# Cache
+.cache/
+*.cache
+
+# Node modules (if any frontend components)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Compressed files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Certificate files
+*.pem
+*.key
+*.crt
+*.csr 
