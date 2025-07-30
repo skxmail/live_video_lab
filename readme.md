@@ -1,4 +1,4 @@
-# Shaka Packager Streaming Quality Suite
+# Live Streaming Basic Lab
 
 Este proyecto es una suite de herramientas para **empaquetado, monitoreo y análisis de calidad de streaming** de video, basada en contenedores Docker. Permite simular flujos de video, empaquetarlos en DASH, reproducirlos y monitorear métricas de calidad en tiempo real.
 
