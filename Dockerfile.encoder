@@ -1,20 +1,10 @@
-# FROM alpine:3.19
-
-# RUN apk add --no-cache ffmpeg yt-dlp
-
-# COPY start_encoder.sh /start_encoder.sh
-# RUN chmod +x /start_encoder.sh
-
-# CMD ["/start_encoder.sh"] 
-
-
 FROM jrottenberg/ffmpeg:6.1-alpine
 
 USER root
-# RUN apk add --no-cache yt-dlp
+
 RUN apk add --no-cache python3 yt-dlp
 
-COPY encoder/start_encoder.sh /start_encoder.sh
+COPY src/encoder/start_encoder.sh /start_encoder.sh
 RUN chmod +x /start_encoder.sh
 
 ENTRYPOINT ["/start_encoder.sh"] 

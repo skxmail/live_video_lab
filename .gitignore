@@ -8,8 +8,8 @@ monitoring.log
 
 # Media files
 media/output/
-media/www/output/audio/*
-media/www/output/*
+media/www/output/
+temp-data/
 
 *.mp4
 *.mkv

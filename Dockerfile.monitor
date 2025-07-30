@@ -49,15 +49,18 @@ RUN pip install --no-cache-dir \
 # Crear directorio de trabajo
 WORKDIR /app
 
-# Copiar scripts de monitoreo
-COPY quality_analyzer.sh /app/quality_analyzer.sh
-COPY stream_monitor.py /app/stream_monitor.py
+# Copiar scripts de monitoreo básico
+COPY src/monitor/quality_analyzer.sh /app/quality_analyzer.sh
+COPY src/monitor/*.py /app/
 
-# Hacer ejecutables los scripts
-RUN chmod +x /app/quality_analyzer.sh /app/stream_monitor.py
 
-# Crear directorio para logs
-RUN mkdir -p /app/logs
+RUN chmod +x /app/quality_analyzer.sh /app/*.py 
+
+# Crear directorios necesarios
+RUN mkdir -p /app/logs /app/stream_analysis /tmp
+
+# Copiar documentación y script de prueba
+COPY src/monitor/README_STREAM_ANALYSIS.md /app/README_STREAM_ANALYSIS.md
 
 # Nota: GPAC, VMAF y Bento4 se pueden instalar manualmente si es necesario
 # GPAC: apt-get install gpac (en sistemas compatibles)
@@ -65,11 +68,8 @@ RUN mkdir -p /app/logs
 # Bento4 se puede compilar desde source si es necesario
 
 # Copiar script de inicio
-COPY monitor/entrypoint.sh /app/entrypoint.sh
+COPY src/monitor/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
-
-# Copiar aplicación web para visualización
-COPY monitor/dashboard.py /app/dashboard.py
 
 # Exponer puerto para el dashboard
 EXPOSE 8081
@@ -78,4 +78,4 @@ EXPOSE 8081
 ENTRYPOINT ["/app/entrypoint.sh"]
 
 # Comando por defecto
-CMD ["python3", "/app/dashboard.py"] 
+CMD ["sh", "-c", "python3 /app/stream_analysis_suite.py \"$MANIFEST_URL\" -i \"${MONITOR_INTERVAL:-30}\""]

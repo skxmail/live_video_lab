@@ -1,1 +1,2 @@
-sudo rm -fdr ./media/www/output/*
+sudo rm -fdr ./temp-data/packager-output/*
+sudo rm -fdr ./logs/*

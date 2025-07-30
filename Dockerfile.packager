@@ -1,0 +1,20 @@
+FROM google/shaka-packager:v3.4.2
+
+# Instala nginx
+RUN apk add --no-cache nginx
+
+# Directorio donde NGINX servirá el contenido
+RUN mkdir -p /media/www/output
+
+# Configuración de NGINX
+COPY src/packager/nginx.conf /etc/nginx/nginx.conf
+COPY src/packager/start.sh /start.sh
+
+# Expone puerto HTTP
+EXPOSE 80
+
+# Lee los argumentos del Packager desde la variable de entorno PACKAGER_PARAMS
+ENV PACKAGER_PARAMS=""
+
+# CMD que ejecuta el packager con los parámetros desde env y lanza nginx
+CMD ["/start.sh"]

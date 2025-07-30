@@ -1,0 +1,6 @@
+FROM python:3.9-slim
+WORKDIR /app
+COPY src/dashboard/dashboard.py ./
+RUN pip install flask
+EXPOSE 8081
+CMD ["python3", "dashboard.py"] 

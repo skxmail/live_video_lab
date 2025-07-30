@@ -4,51 +4,61 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.encoder
-  #   #image: linuxserver/ffmpeg:7.1.1
-  # encoder:
-  #   image: jrottenberg/ffmpeg:6.1-alpine
     container_name: encoder
+    environment:
+      # - YOUTUBE_URL=https://www.youtube.com/watch?v=cb12KmMMDJA
+      - YOUTUBE_URL=https://www.youtube.com/watch?v=5f__Ls4_VYQ # URL del video de YouTube a transmitir
     networks:
       streaming:
         ipv4_address: 172.28.1.10
-    volumes:
-      - ./media/www:/media/www
-      # - ./start_encoder.sh:/start_encoder.sh
 
   packager:
-    image: google/shaka-packager:v3.4.2
+    build:
+      context: .
+      dockerfile: Dockerfile.packager
     container_name: packager
-    volumes:
-      # - ./media/www:/media/www
-      - ./media:/media
     networks:
       streaming:
         ipv4_address: 172.28.1.11
-    tty: true
-    # depends_on:
-    #   - encoder
-    command:
-      - packager
-#      - "input=udp://0.0.0.0:40000,stream=audio,init_segment=audio_init.mp4,segment_template=audio_$$Number$$.m4s"
-      # - "input=udp://0.0.0.0:40000,stream=video,init_segment=h264_360p_init.mp4,segment_template=h264_360p_$$Number$$.m4s"
-
-      - "input=udp://0.0.0.0:40000,stream=audio,init_segment=/media/www/output/audio/audio_init.mp4,segment_template=/media/www/output/audio/audio_$$Number$$.m4s"
-      - "input=udp://0.0.0.0:40000,stream=video,init_segment=/media/www/output/video/h264_360p_init.mp4,segment_template=/media/www/output/video/h264_360p_$$Number$$.m4s"
-  
-      # - --segment_duration
-      # - "5"
-      - --mpd_output
-      - /media/www/output/manifest.mpd
+    volumes:
+      - ./temp-data/packager-output:/media/www/ # Directorio donde se guardan los segmentos y manifiesto MPD
+    ports:
+      - "38882:80"
+    environment: # Parámetros del Shaka Packager
+      PACKAGER_PARAMS: >
+        input=udp://0.0.0.0:40000,stream=audio,init_segment=/media/www/audio/audio_init.mp4,segment_template=/media/www/audio/audio_$$Number$$.m4s
+        input=udp://0.0.0.0:40000,stream=video,init_segment=/media/www/video/h264_360p_init.mp4,segment_template=/media/www/video/h264_360p_$$Number$$.m4s
+        --mpd_output /media/www/manifest.mpd
 
   player:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.player
     container_name: player
-    volumes:
-      - ./media/www:/usr/share/nginx/html:rw
     ports:
       - "38880:80"
+    environment:
+      # - MANIFEST_URL=http://localhost:38882/manifest.mpd
+      - MANIFEST_URL=https://encoder001.hostclick.us/encuentro_test/index.mpd # URL del manifiesto MPD a reproducir
     networks:
       - streaming
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    container_name: dashboard
+    volumes:
+      - ./logs:/app/stream_analysis # Directorio donde estan los logs del análisis de monitor
+    ports:
+      - "38881:8081"
+    environment:
+      - MANIFEST_URL=http://packager:80/manifest.mpd
+    networks:
+      - streaming
+    depends_on:
+      - packager
+    command: ["python3", "/app/dashboard.py"]
 
   monitor:
     build:
@@ -56,21 +66,14 @@ services:
       dockerfile: Dockerfile.monitor
     container_name: monitor
     volumes:
-      - ./media:/media
-      - ./logs:/app/logs
-      - ./quality_analyzer.sh:/app/quality_analyzer.sh:ro
-      - ./stream_monitor.py:/app/stream_monitor.py:ro
-    ports:
-      - "38881:8081"
+      - ./logs:/app/stream_analysis
     environment:
-      - MANIFEST_URL=http://player:80/output/manifest.mpd
+      - MANIFEST_URL=https://encoder001.hostclick.us/encuentro_test/index.mpd # URL del manifiesto MPD a analizar. Para usar la salida del packager, usar: http://packager:80/manifest.mpd sue puede usar http://packager:80/manifest.mpd
       - MONITOR_INTERVAL=30
-      - LOG_LEVEL=INFO
     networks:
       - streaming
-    depends_on:
-      - packager
-    command: ["python3", "/app/stream_monitor.py", "http://player:80/output/manifest.mpd", "-i", "30", "-o", "/app/logs/stream_quality.json"]
+
+  
 
 networks:
   streaming:

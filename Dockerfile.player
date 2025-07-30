@@ -1,0 +1,8 @@
+FROM nginx:alpine3.22
+
+COPY src/player/index.html /usr/share/nginx/html
+COPY src/player/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+EXPOSE 80
+
+ENTRYPOINT ["/entrypoint.sh"] 
